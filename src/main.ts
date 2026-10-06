@@ -1,6 +1,9 @@
 import './helpers/string-colors.js';
-import { getMessageFromModel } from './actions/get-message-model.js';
+import { examenToolUse } from './patterns/01-tool-use/index.js';
+// import { getMessageFromModel } from './actions/get-message-model.js';
 
 console.clear();
 
-await getMessageFromModel();
+// await getMessageFromModel();
+
+await examenToolUse();
