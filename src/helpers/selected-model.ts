@@ -36,7 +36,7 @@ import { ollama } from 'ollama-ai-provider-v2';
 // export const model = openai('gpt-5-mini');
 
 // Gemini:
-export const model = google('gemini-3.5-flash');
+export const model = google('gemini-3.6-flash');
 
 // Ollama:
 // export const model = ollama('gpt-oss');

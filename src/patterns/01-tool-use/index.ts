@@ -93,6 +93,32 @@ async function withoutTools() {
 }
 
 /**
+ * Tiene el mismo objetivo que la funcion withoutTools, pero esta vez usando el patron tool-use
+ * @returns 
+ */
+async function withTools() {
+  const tracer = createTracer("Con herramientas");
+
+  const { text } = await generateText({
+    model,
+    prompt: QUESTION,
+	// * circuit breaker: para que el modelo no se quede en un loop infinito, le decimos que se detenga despues de 6 pasos
+	stopWhen: stepCountIs(6),
+	tools: { findCourse },
+	//! instrucciones que va a gobernan el comportamiento del modelo
+	instructions: 'Eres un asistente de cursos de programación. ' +
+		'No inventes precios ni cursos, ni duraciones. ' +
+		'Consultalo siempre de las herramientas disponibles.',
+    onStepEnd: tracer.onStepFinish,
+  });
+
+  console.log("\n🚀 ~ Respuesta :", text.green);
+  console.log("\n🚀 ~ Verificar los numeros contra el catalogo de cursos");
+
+  return tracer.summary();
+}
+
+/**
  * ! ============ Implementacion del patron tool-use
  */
 const findCourse = tool({
@@ -105,7 +131,7 @@ const findCourse = tool({
       .string()
       .optional()
       .describe("Texto a buscar en el titulo del curso."),
-    level: z.enum(["basic", "intermediate", "advanced"]),
+    level: z.enum(["basic", "intermediate", "advanced"]).optional(),
   }),
   execute: async ({ text, level }) => {
     const filteredCourses = COURSE_CATALOG.filter((course) => {
@@ -127,9 +153,11 @@ const findCourse = tool({
  */
 export async function examenToolUse() {
   const resultExample = await withoutTools();
+  const resultWithTools = await withTools();
 
   console.log("\n🚀 ~~~~~~~~~~ Respuesta ~~~~~~~~~~ 🚀");
   console.table({
     "Sin herramientas": resultExample,
+    "Con herramientas": resultWithTools,
   });
 }
