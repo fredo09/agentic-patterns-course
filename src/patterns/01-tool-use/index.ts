@@ -104,7 +104,7 @@ async function withTools() {
     prompt: QUESTION,
 	// * circuit breaker: para que el modelo no se quede en un loop infinito, le decimos que se detenga despues de 6 pasos
 	stopWhen: stepCountIs(6),
-	tools: { findCourse },
+	tools: { findCourse, calculateTotal },
 	//! instrucciones que va a gobernan el comportamiento del modelo
 	instructions: 'Eres un asistente de cursos de programación. ' +
 		'No inventes precios ni cursos, ni duraciones. ' +
@@ -149,15 +149,42 @@ const findCourse = tool({
 });
 
 /**
+ * ! ============ Tool para hacer el calculo total
+ */
+const calculateTotal = tool({
+  description: 'Calcula el precio total de los cursos aplicando un descuento proporcional.' + 
+  'Utilizala para cualquier operacion aritmetica: no calcules mentalmente',
+  inputSchema: z.object({
+    ids: z.array(z.string()).describe('IDs de los cursos a sumar  ejemplo: ["ts-01", "curso-id-02"]'),
+    discountPercent: z.number().max(100).min(0).default(0)
+  }),
+  execute: async ({ ids, discountPercent }) => {
+    // aqui nosotros intervenimos para buscar el id de los cursos y hacer el calculo del total
+    const findCourses = COURSE_CATALOG.filter((course) => ids.includes(course.id));
+    const notFoundCourses = COURSE_CATALOG.filter((course) => !ids.includes(course.id));
+
+    const subTotal = findCourses.reduce((acc, course) => acc + course.priceUSD, 0);
+    const discountAmount = subTotal * (discountPercent / 100);
+
+    return {
+      subTotal: Number(subTotal.toFixed(2)),
+      discountAmount: Number(discountAmount.toFixed(2)),
+      total: Number((subTotal - discountAmount).toFixed(2)),
+      notFoundCourses,
+    }
+  }
+});
+
+/**
  * Aqui creamos la funcion que va a generar el texto usando el modelo seleccionado esto usando el patron  tool-use
  */
 export async function examenToolUse() {
-  const resultExample = await withoutTools();
+  // const resultExample = await withoutTools();
   const resultWithTools = await withTools();
 
   console.log("\n🚀 ~~~~~~~~~~ Respuesta ~~~~~~~~~~ 🚀");
   console.table({
-    "Sin herramientas": resultExample,
+    // "Sin herramientas": resultExample,
     "Con herramientas": resultWithTools,
   });
 }
